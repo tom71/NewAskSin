@@ -41,7 +41,7 @@ void    startWDG64ms(void) {
 void    startWDG250ms(void) {
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
 	WDTCSR = (1<<WDIE) | (1<<WDP2);
-	wdtSleep_TIME = 256;
+	wdtSleep_TIME = 275; //256;
 }
 void    startWDG8000ms(void) {
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
@@ -108,6 +108,7 @@ void    addMillis(tMillis ms) {
 }
 ISR(ISR_VECT) {
 	++milliseconds;
+	//setPinCng(LED_RED_PORT, LED_RED_PIN);													// for generating a 1 KHz signal on LED pin to calibrate CPU
 }
 //- -----------------------------------------------------------------------------------------------------------------------
 

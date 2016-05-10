@@ -23,33 +23,35 @@ const uint8_t peerSingle[] = {
 class THSensor {
   //- user code here ------------------------------------------------------------------------------------------------------
   public://----------------------------------------------------------------------------------------------------------------
+	struct s_meas {
+		uint16_t	temp;
+		uint8_t		hum;
+		uint16_t	bat;
+	} values;
+
   protected://-------------------------------------------------------------------------------------------------------------
   private://---------------------------------------------------------------------------------------------------------------
 	struct s_lstCnl {
-		uint8_t list0[10];			// must be size of list0 !! Adjust !!
+		// List 0: 0x01, 0x05, 0x0A, 0x0B, 0x0C, 0x12, 0x14,
+		uint8_t	lst0[7];
 	} lstCnl;
 
 	struct s_lstPeer {
 		// 0x01,
 		uint8_t  peerNeedsBurst;     // 0x01, s:0, e:1
+		uint8_t  tempCorr;
 	} lstPeer;
 
   //- user defined functions ----------------------------------------------------------------------------------------------
   public://----------------------------------------------------------------------------------------------------------------
 	void     (*fInit)(void);																// pointer to init function in main sketch
-	void     (*fMeas)(void);																// pointer to measurement function in main sketch
-	uint8_t  *ptrVal;																		// pointer to byte which holds the measured value
+	void     (*fMeas)(struct s_meas *);														// pointer to measurement function in main sketch
 
 	uint8_t  mMode;																			// 0 timer based, 1 level of changed based transmition
 	uint8_t  mLevelChange;																	// value change 
 	uint32_t mSendDelay;																	// delay for transmition or minimum delay while value changed
 	
-	uint8_t  sState;																		// indicates if we are in measuring or transmition state
-	uint8_t  msgCnt;																		// message counter of sensor module
-	uint8_t  sensVal[2];																	// sensor value, byte 1 is message counter, byte 2 is sensor value
-	
-	void     config(void Init(), void Measure(), uint8_t *Val);								// configure the sensor module from outside
-	void     timing(uint8_t mode, uint32_t sendDelay, uint8_t levelChange);					// mode 0 transmit based on timing or 1 on level change; level change value; while in mode 1 timing value will stay as minimum delay on level change
+	void     config(void Init(), void Measure(struct s_meas *));							// configure the sensor module from outside
 
 	void     sensPoll(void);																// polling function for tasks done on a regular manner
 	uint32_t calcSendSlot(void);															// calculate next send slot based on HMID

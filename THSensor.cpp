@@ -9,63 +9,36 @@
 #include "THSensor.h"
 
 waitTimer sensTmr;																				// timer instance for timing purpose
-#define measureDelay 500																		// time between measurement and sending the message
 
 //-------------------------------------------------------------------------------------------------------------------------
 //- user defined functions -
 //-------------------------------------------------------------------------------------------------------------------------
-void THSensor::config(void Init(), void Measure(), uint8_t *Val) {
+void THSensor::config(void Init(), void Measure(struct s_meas *)) {
 	fInit = Init;
 	fMeas = Measure;
-	ptrVal = Val;
 	if (fInit) fInit();
+	sensTmr.set(3000);																			// wait for first measurement being completed
 }
-void THSensor::timing(uint8_t mode, uint32_t sendDelay, uint8_t levelChange) {
-	// mode 0 transmit based on timing or 1 on level change; level change value; while in mode 1 timing value will stay as minimum delay on level change
-	mMode = mode;
-	mSendDelay = sendDelay;
-	mLevelChange = levelChange;
-	sensTmr.set(500);
-}
+
 void THSensor::sensPoll(void) {
 
 	if (!sensTmr.done() ) return;																// step out while timer is still running
 	
-	if (mMode == 0) {
-		if (!sState) {																			// bit not set, there for measure and set bit
-			sState = 1;
-			sensTmr.set(measureDelay);															// we are upfront of the timing, remain timing with measurement time
-			if (fMeas) fMeas();																	// call the measurement function
-			sensVal[0] = msgCnt;																// copy the current message counter
-			sensVal[1] = *ptrVal;																// copy the current sensor value
-						
-		} else {																				// bit is set, measurement is done, so we should send
-			sState = 0;																			// remove bit while next time measurement is needed
+	sensTmr.set((calcSendSlot()*250 + 2000));													// set a new measurement time
 
-			if (mSendDelay == 0) sensTmr.set((calcSendSlot() *250) - measureDelay);				// set a new measurement time
-			else sensTmr.set(mSendDelay - measureDelay);
-
-			msgCnt++;																			// increase the message counter
-			hm->sendSensor_event(regCnl,1,sensVal);												// prepare the message and send
-
-		}
-	} else if (mMode == 1) {
-		if (sensVal[1] + mLevelChange > *ptrVal) return;										// check if previous value + level change is greater then current value - exit
-		if (sensVal[1] - mLevelChange < *ptrVal) return;										// check if previous value - level change is smaller then current value - exit
-		
-		// if we are here, timeout was gone and we have a significant change of the value
-		sensVal[0] = msgCnt++;																	// copy the current message counter
-		sensVal[1] = *ptrVal;																	// copy the current sensor value
-
-		hm->sendSensor_event(regCnl,1,sensVal);													// prepare the message and send
-	
-	}
-
+	if (fMeas) fMeas(&values);																	// call the measurement function
+	//msgCnt++;																					// increase the message counter
+	//hm->sendSensor_event(regCnl,1,sensVal);													// prepare the message and send	
+	hm->sendWeatherEvent(regCnl,0,(uint8_t *)&values,sizeof(values));							// prepare the message and send, no burst
 }
 
 uint32_t THSensor::calcSendSlot(void) {
 	uint32_t result = (((hm->ee.getHMID() << 8) | (hm->sn.msgCnt)) * 1103515245 + 12345) >> 16;
 	result = (result & 0xFF) + 480;
+	
+	//uint32_t HMID = hm->ee.getHMID();
+	//dbg << F("Slot=") << result << F(" (") << result/4 << F("), dst=") << getMillis() + result*250 << F(", HMID=");
+	//dbg << _HEX((uint8_t *)(&HMID), 4) << F(", msgcnt=") << hm->sn.msgCnt << F(" ") << _TIME << "\n"; _delay_ms(10);
 	//dbg << "calcSendSlot: " << result << '\n'; 
 	return result;
 }

@@ -169,7 +169,7 @@ void    switchExtBattMeasurement(uint8_t stat);
 /**
  * get the voltage off battery
  */
-uint8_t  getBatteryVoltage(void) {
+uint16_t  getBatteryVoltage(void) {
 	#if defined EXT_BATTERY_MEASUREMENT
 		initExtBattMeasurement();
 		switchExtBattMeasurement(1);
@@ -180,7 +180,7 @@ uint8_t  getBatteryVoltage(void) {
 			(1 << REFS1) | (1 << REFS0) | BATT_MEASURE_PIN
 		);
 
-		adcValue = adcValue * AVR_BANDGAP_VOLTAGE / 1023 / BATTERY_FACTOR;		// calculate battery voltage in V/10
+		adcValue = adcValue * AVR_BANDGAP_VOLTAGE / 103 /*1023*/ / BATTERY_FACTOR;		// calculate battery voltage in V/10
 		switchExtBattMeasurement(0);
 	#else
 		uint16_t adcValue = getAdcValue(										// Voltage Reference = AVCC with external capacitor at AREF pin; Input Channel = 1.1V (V BG)
@@ -190,7 +190,7 @@ uint8_t  getBatteryVoltage(void) {
 		adcValue = AVR_BANDGAP_VOLTAGE * 1023 / adcValue / 100;					// calculate battery voltage in V/10
 	#endif
 
-	return (uint8_t)adcValue;
+	return (uint16_t)adcValue;
 }
 
 /**

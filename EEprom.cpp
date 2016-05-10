@@ -6,7 +6,7 @@
 //- with a lot of support from martin876 at FHEM forum
 //- -----------------------------------------------------------------------------------------------------------------------
 
-//#define EE_DBG
+#define EE_DBG
 //#define EE_DBG_TEST
 #include "EEprom.h"
 
@@ -337,7 +337,9 @@ uint8_t  EE::getIntend(uint8_t *reId, uint8_t *toId, uint8_t *peId) {
 void     EE::clearPeers(void) {
 	for (uint8_t i = 0; i < devDef.cnlNbr; i++) {										// step through all channels
 		clearEEPromBlock(peerTbl[i].pAddr, peerTbl[i].pMax * 4);
-		//dbg << F("clear eeprom, addr ") << peerTbl[i].pAddr << F(", len ") << (peerTbl[i].pMax * 4) << '\n';																	// ...and some information
+		#ifdef EE_DBG																	// only if ee debug is set
+			dbg << F("clear eeprom, addr ") << peerTbl[i].pAddr << F(", len ") << (peerTbl[i].pMax * 4) << '\n';	// ...and some information
+		#endif
 	}
 }
 uint8_t  EE::isPeerValid (uint8_t *peer) {
@@ -508,8 +510,10 @@ void     EE::clearRegs(void) {
 		// calculate full length of peer indexed channels and clear the memory
 		clearEEPromBlock(cnlTbl[i].pAddr, peerMax * cnlTbl[i].sLen);
 
-		//dbg << i << ": " << peerMax << ", addr: " << cnlTbl[i].pAddr << ", len: " \
-		//    << (peerMax * cnlTbl[i].sLen) << '\n';
+		#ifdef EE_DBG																		// only if ee debug is set
+			dbg << i << ": " << peerMax << ", addr: " << cnlTbl[i].pAddr << ", len: " \
+			    << (peerMax * cnlTbl[i].sLen) << '\n';
+		#endif
 	}
 }
 uint8_t  EE::countRegListSlc(uint8_t cnl, uint8_t lst) {
