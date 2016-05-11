@@ -28,25 +28,29 @@ void dbgStart(void) {
 //- power management functions --------------------------------------------------------------------------------------------
 // http://donalmorrissey.blogspot.de/2010/04/sleeping-arduino-part-5-wake-up-via.html
 // http://www.mikrocontroller.net/articles/Sleep_Mode#Idle_Mode
+
+static volatile uint8_t wdt_int;
+tMillis wdt_cal_ms;
+
 void    startWDG32ms(void) {
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
 	WDTCSR = (1<<WDIE) | (1<<WDP0);
-	wdtSleep_TIME = 32;
+	wdtSleep_TIME = wdt_cal_ms / 8;
 }
 void    startWDG64ms(void) {
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
 	WDTCSR = (1<<WDIE) | (1<<WDP1);
-	wdtSleep_TIME = 64;
+	wdtSleep_TIME = wdt_cal_ms / 4;
 }
 void    startWDG250ms(void) {
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
 	WDTCSR = (1<<WDIE) | (1<<WDP2);
-	wdtSleep_TIME = 256;
+	wdtSleep_TIME = wdt_cal_ms;
 }
 void    startWDG8000ms(void) {
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
 	WDTCSR = (1<<WDIE) | (1<<WDP3) | (1<<WDP0);
-	wdtSleep_TIME = 8192;
+	wdtSleep_TIME = wdt_cal_ms * 32;
 }
 void    setSleep(void) {
 	//dbg << ',';																// some debug
@@ -69,6 +73,23 @@ void    setSleep(void) {
 	//dbg << '.';																// some debug
 }
 
+void	calibrateWatchdog() {
+	uint8_t sreg = SREG;														// remember interrupt state (sei / cli)
+	initMillis();
+	startWDG250ms();
+	wdtSleep_TIME = 0;															// do not add anything in ISR
+	
+	wdt_cal_ms = getMillis();
+	wdt_reset();
+	wdt_int = 0;
+	sei();
+	
+	while(!wdt_int)																// wait for watchdog interrupt
+		;
+	SREG = sreg;																// restore previous interrupt state
+	wdt_cal_ms = getMillis() - wdt_cal_ms;										// wdt_cal_ms now has "real" length of 250ms wdt_interrupt
+	stopWDG();
+}
 void    startWDG() {
 	WDTCSR = (1<<WDIE);
 }
@@ -82,6 +103,7 @@ void    setSleepMode() {
 ISR(WDT_vect) {
 	// nothing to do, only for waking up
 	addMillis(wdtSleep_TIME);
+	wdt_int = 1;
 }
 //- -----------------------------------------------------------------------------------------------------------------------
 
@@ -92,7 +114,7 @@ void    initMillis() {
 	SET_TCCRA();
 	SET_TCCRB();
 	REG_TIMSK = _BV(BIT_OCIE);
-	REG_OCR = ((F_CPU / PRESCALER) / 1000) - 1;		// as of atmel docu: ocr should be one less than divider
+	REG_OCR = ((F_CPU / PRESCALER) / 1000) - 1;												// as of atmel docu: ocr should be one less than divider
 }
 tMillis getMillis() {
 	tMillis ms;

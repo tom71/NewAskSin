@@ -46,6 +46,8 @@ void AS::init(void) {
 		dbg << F("AS.\n");																		// ...and some information
 	#endif
 
+	calibrateWatchdog();																		// calibrate the watchdog frequency (in relation to main clock)
+	//dbg << F("wdt_cal: ") << wdt_cal_ms << F("\n");
 	initLeds();																					// initialize the leds
 	initConfKey();																				// initialize the port for getting config key interrupts
 
@@ -61,8 +63,6 @@ void AS::init(void) {
 	confButton.init(this);																		// config button
 	pw.init(this);																				// power management
 	bt.init(this);																				// battery check
-	
-	initMillis();																				// start the millis counter
 
 	initRandomSeed();
 
