@@ -154,7 +154,7 @@
 
 
 	//- power management functions --------------------------------------------------------------------------------------------
-	extern tMillis wdt_cal_ms;
+	extern uint16_t wdt_cal_ms;
 	extern void    startWDG32ms(void);
 	extern void    startWDG64ms(void);
 	extern void    startWDG250ms(void);

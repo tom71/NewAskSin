@@ -526,11 +526,10 @@ inline void AS::sendSliceList(void) {
 
 inline void AS::sendPeerMsg(void) {
 	uint8_t retries_max;
-	static waitTimer next_peer;
 
 	retries_max = (stcPeer.bidi) ? 3 : 1;
 	
-	if (sn.active || !next_peer.done()) return;													// check if send function has a free slot, otherwise return
+	if (sn.active) return;																		// check if send function has a free slot, otherwise return
 	
 	// first run, prepare amount of slots
 	if (!stcPeer.idx_max) {
@@ -603,8 +602,6 @@ inline void AS::sendPeerMsg(void) {
 	//l4_0x01.ui = 0;		// disable burst - hardcoded
 	
 	preparePeerMessage(tmp_peer, 1);
-	next_peer.set(100);																			// wait 100ms before sending message to next peer
-	pw.stayAwake(120);																			// keep cpu active to get exact timing
 	
 	if (!sn.mBdy.mFlg.BIDI) {
 		stcPeer.slot[stcPeer.idx_cur >> 3] &=  ~(1<<(stcPeer.idx_cur & 0x07));					// clear bit, because it is a message without need to be repeated
