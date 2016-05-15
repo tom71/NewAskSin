@@ -27,19 +27,13 @@ void THSensor::sensPoll(void) {
 	sensTmr.set((calcSendSlot()*250 + 2000));													// set a new measurement time
 
 	if (fMeas) fMeas(&values);																	// call the measurement function
-	//msgCnt++;																					// increase the message counter
-	//hm->sendSensor_event(regCnl,1,sensVal);													// prepare the message and send	
 	hm->sendWeatherEvent(regCnl,0,(uint8_t *)&values,sizeof(values));							// prepare the message and send, no burst
 }
 
 uint32_t THSensor::calcSendSlot(void) {
 	uint32_t result = (((hm->ee.getHMID() << 8) | (hm->sn.msgCnt)) * 1103515245 + 12345) >> 16;
 	result = (result & 0xFF) + 480;
-	
-	//uint32_t HMID = hm->ee.getHMID();
-	//dbg << F("Slot=") << result << F(" (") << result/4 << F("), dst=") << getMillis() + result*250 << F(", HMID=");
-	//dbg << _HEX((uint8_t *)(&HMID), 4) << F(", msgcnt=") << hm->sn.msgCnt << F(" ") << _TIME << "\n"; _delay_ms(10);
-	//dbg << "calcSendSlot: " << result << '\n'; 
+
 	return result;
 }
 
