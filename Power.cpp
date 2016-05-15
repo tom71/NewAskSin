@@ -64,7 +64,7 @@ void PW::poll(void) {
 	if (checkWakeupPin()) return;															// wakeup pin active
 	
 	// some communication still active, jump out
-	if ((pHM->sn.active) || (pHM->stcSlice.active) || (pHM->stcPeer.active) || (pHM->cFlag.active) || (pHM->pairActive) || (pHM->confButton.armFlg)) return;
+	if ((pHM->sn.active) || (pHM->stcSlice.active) || (pHM->cFlag.active) || (pHM->pairActive) || (pHM->confButton.armFlg)) return;
 	
 	#ifdef PW_DBG																			// only if pw debug is set
 	dbg << '.';																				// ...and some information

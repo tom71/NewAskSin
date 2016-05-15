@@ -30,7 +30,7 @@ void dbgStart(void) {
 // http://www.mikrocontroller.net/articles/Sleep_Mode#Idle_Mode
 
 static volatile uint8_t wdt_int;
-tMillis wdt_cal_ms;
+uint16_t wdt_cal_ms;															// uint16 is enough - 32 bit here not needed
 
 void    startWDG32ms(void) {
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
@@ -73,21 +73,19 @@ void    setSleep(void) {
 	//dbg << '.';																// some debug
 }
 
-void	calibrateWatchdog() {
+void	calibrateWatchdog() {													// to be called very early - millis must not be used yet - see below!
 	uint8_t sreg = SREG;														// remember interrupt state (sei / cli)
 	initMillis();
 	startWDG250ms();
-	wdtSleep_TIME = 0;															// do not add anything in ISR
-	
-	wdt_cal_ms = getMillis();
+
+	// assume: getMillis()==0, wdt_cal_ms==0, wdt_int==0
 	wdt_reset();
-	wdt_int = 0;
 	sei();
 	
 	while(!wdt_int)																// wait for watchdog interrupt
 		;
 	SREG = sreg;																// restore previous interrupt state
-	wdt_cal_ms = getMillis() - wdt_cal_ms;										// wdt_cal_ms now has "real" length of 250ms wdt_interrupt
+	wdt_cal_ms = getMillis();													// wdt_cal_ms now has "real" length of 250ms wdt_interrupt
 	stopWDG();
 }
 void    startWDG() {
