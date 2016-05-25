@@ -21,6 +21,7 @@
 #include "Power.h"
 #include "Battery.h"
 #include "Version.h"
+#include "macros.h"
 
 /**
  * @short Main class for implementation of the AskSin protocol stack.
@@ -37,6 +38,7 @@
  *
  * All send functions are used by sensor or actor classes like THSensor or Dimmer.
  */
+
 class AS {
 	friend class SN;
 	friend class RV;

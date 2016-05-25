@@ -22,8 +22,10 @@
 	#include <avr/eeprom.h>
 	#include <avr/common.h>
 
+	#include "macros.h"
 	#include "Print.h"
 
+	
 	//- MCU dependent HAL definitions -----------------------------------------------------------------------------------------
 	#if defined(__AVR_ATmega328P__)
 		#include "HAL_atmega328P.h"
@@ -34,11 +36,6 @@
 	#endif
 	//- -----------------------------------------------------------------------------------------------------------------------
 
-	struct  s_pcINT {
-		uint8_t cur;
-		uint8_t prev;
-		uint32_t time;
-	} static volatile pcInt[3];
 
 	static uint16_t wdtSleep_TIME;
 
@@ -58,18 +55,6 @@
 	#define SET_TCCRB()	    (REG_TCCRB = CLOCKSEL)
 	//- -----------------------------------------------------------------------------------------------------------------------
 
-	//- some macros and definitions -------------------------------------------------------------------------------------------
-	#define _pgmB(x) pgm_read_byte(&x)											// short hand for PROGMEM read
-	#define _pgmW(x) pgm_read_word(&x)
-
-	#define pinOutput(DDR,PIN)   ((DDR) |=  _BV(PIN))							// pin functions
-	#define pinInput(DDR,PIN)    ((DDR) &= ~_BV(PIN))
-	#define setPinHigh(PORT,PIN) ((PORT) |=  _BV(PIN))
-	#define setPinLow(PORT,PIN)  ((PORT) &= ~_BV(PIN))
-	#define setPinCng(PORT,PIN)  ((PORT) ^= _BV(PIN))
-	#define getPin(PORT,PIN)     ((PORT) &  _BV(PIN))
-	//- -----------------------------------------------------------------------------------------------------------------------
-
 
 	//- timer functions -------------------------------------------------------------------------------------------------------
 	#define HAS_OWN_MILLIS_TIMER
@@ -79,28 +64,29 @@
 	extern void    addMillis(tMillis ms);
 	//- -----------------------------------------------------------------------------------------------------------------------
 
-	//- some macros for debugging ---------------------------------------------------------------------------------------------
-	// http://aeroquad.googlecode.com/svn/branches/pyjamasam/WIFIReceiver/Streaming.h
-	#ifndef dbg
-		#define dbg Serial
-		template<class T> inline Print &operator <<(Print &obj, T arg) { obj.print(arg); return obj; }
-	#endif
 
-	#define hiHexB(x)  char((x>>4)>9?(x>>4)+55:(x>>4)+48)
-	#define loHexB(x)  char((x&0xF)>9?(x&0xF)+55:(x&0xF)+48)
+
+	/**	- ---------------------------------------------------------------------------------------------------------------------
+	*
+	* @brief Template and some functions for debugging over serial interface
+	* http://aeroquad.googlecode.com/svn/branches/pyjamasam/WIFIReceiver/Streaming.h
+	*/
+
+	// template to enable dbg << "some text" << '\n' 
+	template<class T> inline Print &operator <<(Print &obj, T arg) { obj.print(arg); return obj; }
 
 	struct _HEXB {
 		uint8_t val;
-		_HEXB(uint8_t v): val(v) {}
+		_HEXB(uint8_t v) : val(v) {}
 	};
-	inline Print &operator <<(Print &obj, const _HEXB &arg) { obj.print(hiHexB(arg.val)); obj.print(loHexB(arg.val)); return obj; }
+	inline Print &operator <<(Print &obj, const _HEXB &arg) { obj.print(_HI_HEX_BITS(arg.val)); obj.print(_LO_HEX_BITS(arg.val)); return obj; }
 
 	struct _HEX {
 		uint8_t *val;
 		uint8_t len;
-		_HEX(uint8_t *v, uint8_t l): val(v), len(l) {}
+		_HEX(uint8_t *v, uint8_t l) : val(v), len(l) {}
 	};
-	inline Print &operator <<(Print &obj, const _HEX &arg) { for(uint8_t i=0;i<arg.len;i++)	{ obj.print(hiHexB(arg.val[i])); obj.print(loHexB(arg.val[i])); if(i+1<arg.len) obj.print(' '); }; return obj; }
+	inline Print &operator <<(Print &obj, const _HEX &arg) { for (uint8_t i = 0; i<arg.len; i++) { obj.print(_HI_HEX_BITS(arg.val[i])); obj.print(_LO_HEX_BITS(arg.val[i])); if (i + 1<arg.len) obj.print(' '); }; return obj; }
 
 	enum _eTIME { _TIME };
 	inline Print &operator <<(Print &obj, _eTIME arg) { obj.print('('); obj.print(getMillis()); obj.print(')'); return obj; }
@@ -109,40 +95,66 @@
 	//- -----------------------------------------------------------------------------------------------------------------------
 
 
-	//- pin related functions -------------------------------------------------------------------------------------------------
-	void    initLeds(void);												// initialize leds
-	void    ledRed(uint8_t stat);										// function in main sketch to drive leds
-	extern void    ledGrn(uint8_t stat);										// stat could be 0 for off, 1 for on, 2 for toggle
-
-	extern void    initConfKey(void);											// init the config key, function in user sketch
-
-	extern void    initWakeupPin(void);											// init the wakeup pin
-	extern uint8_t checkWakeupPin(void);										// we could setup a pin which avoid sleep mode
-	//- -----------------------------------------------------------------------------------------------------------------------
-
-	//- pin interrupts --------------------------------------------------------------------------------------------------------
-	// http://www.protostack.com/blog/2010/09/external-interrupts-on-an-atmega168/
-
-	#define regPCIE(PORT)         (PCICR |= _BV(PORT))
-	#define regPCINT(MASK,PORT)   (MASK  |= _BV(PORT))
-
-	extern void    initPCINT(void);
-	extern uint8_t chkPCINT(uint8_t port, uint8_t pin, uint8_t debounce);
-	//- -----------------------------------------------------------------------------------------------------------------------
-
 
 	//- cc1100 hardware functions ---------------------------------------------------------------------------------------------
-	extern void    ccInitHw(void);
-	extern uint8_t ccSendByte(uint8_t data);
-	extern uint8_t ccGetGDO0(void);
+	// all functions can be found in HAL_extern.h file, this are only the forward declarations to overcome the problem
+	// of handing over #defines from user folder to library folder in Arduino. No pin change interrupt neccasary any more.
 
-	extern void    enableGDO0Int(void);
-	extern void    disableGDO0Int(void);
-
-	extern void    waitMiso(void);
-	extern void    ccSelect(void);
-	extern void    ccDeselect(void);
+	extern void    ccInitHw(void);																// init all hardware pins related to the cc1101 module
+	extern uint8_t ccSendByte(uint8_t data);													// SPI send byte function
+	extern uint8_t ccGetGDO0(void);																// detects falling edge while received data
+	extern void    ccSelect(void);																// chip select and wait till ready
+	extern void    ccDeselect(void);															// chip deselect
 	//- -----------------------------------------------------------------------------------------------------------------------
+
+	//- led related functions -------------------------------------------------------------------------------------------------
+	struct s_blPat {							// struct for defining the blink pattern
+		uint8_t len;							// length of pattern string
+		uint8_t dur;							// how often the pattern has to be repeated, 0 for endless
+		uint8_t led0;							// red
+		uint8_t led1;							// green, if you like orange, set led0 and led1 to one
+		uint8_t pat[6];							// the pattern it self, pattern starts always with the on time, followed by off time.
+	};											// time is given in 10ms steps
+	extern const struct s_blPat blPat[];
+	extern void    initLeds(void);																// initialize leds
+	extern void    ledRed(uint8_t stat);														// function in main sketch to drive leds
+	extern void    ledGrn(uint8_t stat);														// stat could be 0 for off, 1 for on, 2 for toggle
+	//- -----------------------------------------------------------------------------------------------------------------------
+
+	//- config key related functions ------------------------------------------------------------------------------------------
+	extern void    initConfKey(void);															// init the config key, function in user sketch
+	extern uint8_t checkConfKey(void);															// checks the conf key if there had something happened
+	//- -----------------------------------------------------------------------------------------------------------------------
+
+	//- needed for 32u4 to prevent sleep, while USB didn't work in sleep ------------------------------------------------------
+	extern void    initWakeupPin(void);															// init the wakeup pin
+	extern uint8_t checkWakeupPin(void);														// we can setup a pin which avoid sleep mode
+	//- -----------------------------------------------------------------------------------------------------------------------
+
+
+
+	//- pin interrupts --------------------------------------------------------------------------------------------------------
+	/**
+	* @brief Structure to handle information raised by the interrupt function
+	*
+	* @param *PINR  Pointer to PIN register, to read the PIN status
+	* @param prev   To remember on the previus status of the port, to identify which PIN was raising the interrupt
+	* @param mask   Mask byte to clean out bits which are not registered for interrupt detection
+	*/
+	struct  s_pcint_vector_byte {
+		volatile uint8_t *PINR;																		// pointer to the port where pin status can be read
+		uint8_t curr;
+		uint8_t prev;
+		uint8_t mask;
+		uint32_t time;
+	};
+	extern volatile s_pcint_vector_byte pcint_vector_byte[];										// size of the table depending on avr type in the cpp file
+	extern void    registerPCINT(uint8_t PINBIT, volatile uint8_t *DDREG, volatile uint8_t *PORTREG, volatile uint8_t *PINREG, uint8_t PCINR, uint8_t PCIBYTE, volatile uint8_t *PCICREG, volatile uint8_t *PCIMASK, uint8_t PCIEREG, uint8_t VEC);
+	extern uint8_t checkPCINT(uint8_t PINBIT, volatile uint8_t *DDREG, volatile uint8_t *PORTREG, volatile uint8_t *PINREG, uint8_t PCINR, uint8_t PCIBYTE, volatile uint8_t *PCICREG, volatile uint8_t *PCIMASK, uint8_t PCIEREG, uint8_t VEC, uint8_t debounce);
+	extern uint8_t checkPCINT(uint8_t port, uint8_t pin, uint8_t debounce);							// function to poll if an interrupt had happened, gives also status of pin
+	extern void    maintainPCINT(uint8_t vec);														// collects all interrupt vectors and maintains the callback address for external pin change interrupt handling
+	//- -----------------------------------------------------------------------------------------------------------------------
+
 
 
 	//- eeprom functions ------------------------------------------------------------------------------------------------------

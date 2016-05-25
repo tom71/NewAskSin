@@ -48,7 +48,7 @@ void AS::init(void) {
 
 	calibrateWatchdog();																		// calibrate the watchdog frequency (in relation to main clock)
 	dbg << F("wdt_cal: ") << wdt_cal_ms << F("\n");
-	initLeds();																					// initialize the leds
+	//initLeds();																					// initialize the leds
 	initConfKey();																				// initialize the port for getting config key interrupts
 
 	pw.init(this);																				// power management
@@ -62,12 +62,12 @@ void AS::init(void) {
 	sn.init(this);																				// send module
 	rv.init(this);																				// receive module
 	rg.init(this);																				// module registrar
+	ld.init(this);																				// led class initialization
 	confButton.init(this);																		// config button
 
 	initRandomSeed();
 
 	// everything is setuped, enable RF functionality
-	enableGDO0Int();																			// enable interrupt to get a signal while receiving data
 }
 
 /**

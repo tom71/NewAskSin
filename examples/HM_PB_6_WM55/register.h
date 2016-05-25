@@ -6,8 +6,9 @@
 	#include <cmRemote.h>
 	#include "hmkey.h"
 
+
 	AS hm;                                                               // asksin framework
-	cmRemote cmRemote[6];                                                // create instances of channel module
+	cmRemote cm_Remote[6];                                               // create instances of channel module
 
 	/*
 	* HMID, Serial number, HM-Default-Key, Key-Index
@@ -123,19 +124,24 @@
 		*/
 
 		// init the homematic framework
-		hm.confButton.config(1, CONFIG_KEY_PCIE, CONFIG_KEY_INT);           // configure the config button, mode, pci byte and pci bit
-		hm.ld.init(2, &hm);                                                 // set the led
+		hm.confButton.config(1);                                            // configure the config button mode
 		hm.ld.set(welcome);                                                 // show something
 		hm.bt.set(30, 3600000);                                             // set battery check, internal, 2.7 reference, measurement each hour
 		hm.pw.setMode(POWER_MODE_NO_SLEEP);                                 // set power management mode
 
 		// register user modules
-		cmRemote[0].regInHM(1, 4, &hm);                                     // register user module
-		cmRemote[1].regInHM(2, 4, &hm);                                     // register user module
-		cmRemote[2].regInHM(3, 4, &hm);                                     // register user module
-		cmRemote[3].regInHM(4, 4, &hm);                                     // register user module
-		cmRemote[4].regInHM(5, 4, &hm);                                     // register user module
-		cmRemote[5].regInHM(6, 4, &hm);                                     // register user module
+		cm_Remote[0].config(PIN_C0);                                        // hand over the pin to check for action
+		cm_Remote[0].regInHM(1, 4, &hm);                                    // register user module
+		cm_Remote[1].config(PIN_C1);                                        // hand over the pin to check for action
+		cm_Remote[1].regInHM(2, 4, &hm);                                    // register user module
+		cm_Remote[2].config(PIN_C2);                                        // hand over the pin to check for action
+		cm_Remote[2].regInHM(3, 4, &hm);                                    // register user module
+		cm_Remote[3].config(PIN_C3);                                        // hand over the pin to check for action
+		cm_Remote[3].regInHM(4, 4, &hm);                                    // register user module
+		cm_Remote[4].config(PIN_C4);                                        // hand over the pin to check for action
+		cm_Remote[4].regInHM(5, 4, &hm);                                    // register user module
+		cm_Remote[5].config(PIN_C5);                                        // hand over the pin to check for action
+		cm_Remote[5].regInHM(6, 4, &hm);                                    // register user module
 
 	}
 

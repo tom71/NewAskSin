@@ -10,7 +10,7 @@
 	//- stage modules --------------------------------------------------------------------------------------------------------
 	AS hm;                                                                  // asksin framework
 
-	cmSwitch cmSwitch[1];													// create instances of channel module
+	cmSwitch cm_Switch[1];													// create instances of channel module
 	extern void initRly(uint8_t channel);                                   // declare function to jump in
 	extern void switchRly(uint8_t channel, uint8_t status);                 // declare function to jump in
 
@@ -112,15 +112,14 @@
 		*/
 
 		// init the homematic framework
-		hm.confButton.config(2, CONFIG_KEY_PCIE, CONFIG_KEY_INT);           // configure the config button, mode, pci byte and pci bit
-		hm.ld.init(2, &hm);                                                 // set the led
+		hm.confButton.config(2);                                            // configure the config button, mode, pci byte and pci bit
 		hm.ld.set(welcome);                                                 // show something
 		hm.bt.set(30, 3600000);                                             // set battery check, internal, 2.7 reference, measurement each hour
 		hm.pw.setMode(POWER_MODE_NO_SLEEP);                                 // set power management mode
 
 		// register user modules
-		cmSwitch[0].regInHM(1, 3, &hm);                                    // register user module
-		cmSwitch[0].config(&initRly, &switchRly);                          // configure user module
+		cm_Switch[0].regInHM(1, 3, &hm);	                                // register user module
+		cm_Switch[0].config(&initRly, &switchRly);                          // configure user module
 
 	}
 
