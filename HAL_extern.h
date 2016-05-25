@@ -246,7 +246,7 @@ uint16_t  getBatteryVoltage(void) {
 
 #if defined EXT_BATTERY_MEASUREMENT
 	uint16_t adcValue = getAdcValue(										// Voltage Reference = Internal 1.1V; Input Channel = external battery measure pin
-		(1 << REFS1) | (1 << REFS0) | BATT_MEASURE_PIN
+		(1 << REFS1) | (1 << REFS0) | EX(_PIN, BATT_MEASURE)
 		);
 
 	adcValue = adcValue * AVR_BANDGAP_VOLTAGE / 102 /*1023*/ / BATTERY_FACTOR;		// calculate battery voltage in V/10
@@ -300,16 +300,22 @@ ISR(PCINT0_vect) {
 	maintainPCINT(0);
 	//dbg << "i2:" << PINB << "\n";
 }
+#if PCINT_PCIE_SIZE > 1
 ISR(PCINT1_vect) {
 	maintainPCINT(1);
 	//dbg << "i2:" << PINC << "\n";
 }
+#endif
+#if PCINT_PCIE_SIZE > 2
 ISR(PCINT2_vect) {
 	maintainPCINT(2);
 	//dbg << "i3:" << PIND  << "\n";
 }
+#endif
+#if PCINT_PCIE_SIZE > 3
 ISR(PCINT3_vect) {
 	maintainPCINT(3);
 	//dbg << "i3:" << PINE  << "\n";
 }
+#endif
 //- -----------------------------------------------------------------------------------------------------------------------
